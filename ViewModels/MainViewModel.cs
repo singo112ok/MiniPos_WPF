@@ -34,7 +34,7 @@ namespace MiniPos.ViewModels
 			if (selectedProduct == null) return;
 
 			TotalAmount += selectedProduct.Price;
-			OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {selectedProduct.Name} 주문 (+{selectedProduct.Price:N0}원");
+			OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {selectedProduct.Name} 주문 (+{selectedProduct.Price:N0}원)");
 		}
 
 		[RelayCommand]
