@@ -13,6 +13,19 @@ namespace MiniPos.ViewModels
 		[ObservableProperty]
 		private decimal _totalAmount = 0;
 
+		[ObservableProperty]
+		private Product? _selectedProduct;
+
+		partial void OnSelectedProductChanged(Product? value)
+		{
+			if (value == null) return;
+
+			AddOrder(value);
+
+			SelectedProduct = null;
+		}
+
+
 		public ObservableCollection<Product> Products { get; } = new();
 		public ObservableCollection<string> OrderLogs { get; } = new();
 

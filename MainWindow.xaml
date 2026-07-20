@@ -37,6 +37,7 @@
                 <!-- 상품 목록을 출력하는 ListBox -->
                 <ListBox Grid.Row="1"
                          ItemsSource="{Binding Products}"
+                         SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                          DisplayMemberPath="Name"
                          BorderThickness="1" BorderBrush="#E0E0E0" FontSize="16" Padding="5">
                 </ListBox>
