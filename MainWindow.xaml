@@ -38,8 +38,110 @@
                 <ListBox Grid.Row="1"
                          ItemsSource="{Binding Products}"
                          SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-                         DisplayMemberPath="Name"
-                         BorderThickness="1" BorderBrush="#E0E0E0" FontSize="16" Padding="5">
+                         HorizontalAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         BorderThickness="0" Background="Transparent" Padding="5">
+
+                    <!-- ★ 1. 그리드 형태의 레이아웃 배치 (2열 바둑판 배열) -->
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2" VerticalAlignment="Top"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+
+                    <!-- ★ 2. 컨테이너 스타일 (선택/호버 시 배경 및 테두리 효과 제거/수정) -->
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Margin" Value="6"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>                        
+                    </ListBox.ItemContainerStyle>
+
+                    <!-- ★ 3. 데이터 템플릿 (개별 상품 카드 UI 정의) -->
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <!-- 상품 카드 외벽 (Border) -->
+                            <Border x:Name="CardBorder"
+                                    Background="White"
+                                    BorderBrush="#E2E8F0"
+                                    BorderThickness="1.5"
+                                    CornerRadius="12"
+                                    Padding="14"
+                                    Cursor="Hand">
+                                <!-- 그림자 효과 추가 -->
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" Opacity="0.05" BlurRadius="8" ShadowDepth="2"/>
+                                </Border.Effect>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>  <!--카테고리-->
+                                        <RowDefinition Height="Auto"/>  <!--상품명-->
+                                        <RowDefinition Height="Auto"/>  <!--가격-->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- ① 카테고리 뱃지 (좌측 상단) -->
+                                    <!-- 카테고리에 따라 색상이 변하는 트리거는 아래 DataTemplate.Triggers에서 구현 -->
+                                    <Border x:Name="BadgeBorder"
+                                        Grid.Row="0" 
+                                        Background="#EBF4FF" 
+                                        CornerRadius="6" 
+                                        Padding="8,3" 
+                                        HorizontalAlignment="Left" 
+                                        Margin="0,0,0,10">
+                                        <TextBlock x:Name="BadgeText"
+                                           Text="{Binding Category}" 
+                                           FontSize="11" 
+                                           FontWeight="Bold" 
+                                           Foreground="#3182CE"/>   
+                                    </Border>
+
+                                    <!-- ② 상품명 바인딩 -->
+                                    <TextBlock Grid.Row="1" 
+                                               Text="{Binding Name}"
+                                               FontSize="16"
+                                               FontWeight="Bold" 
+                                               Foreground="#2D3748" 
+                                               Margin="0,0,0,8"
+                                               TextTrimming="CharacterEllipsis"/>
+
+                                    <!-- ③ 단가 바인딩 (통화 포맷팅 적용) -->
+                                    <TextBlock Grid.Row="2" 
+                                               Text="{Binding Price, StringFormat={}{0:N0}원}" 
+                                               FontSize="18" 
+                                               FontWeight="Heavy" 
+                                               Foreground="#E53E3E" 
+                                               HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Border>
+                            <!-- ★ 4. 데이터 및 마우스 상태에 따른 동적 속성 변경 (Triggers) -->
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Category}" Value="Dessert">
+                                    <Setter TargetName="BadgeBorder" Property="Background" Value="#FFF5F5"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#E53E3E"/>
+                                </DataTrigger>
+                                <!-- 데이터의 Category 값이 "Coffee"면 뱃지를 브라운빛으로 변경 -->
+                                <DataTrigger Binding="{Binding Category}" Value="Coffee">
+                                    <Setter TargetName="BadgeBorder" Property="Background" Value="#FEFCBF"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#744210"/>
+                                </DataTrigger>
+
+                                <!-- 마우스가 카드 위에 올라갔을 때 (Hover) 테두리와 색상 변경 -->
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="#3182CE"/>
+                                    <Setter TargetName="CardBorder" Property="Background" Value="#F7FAFC"/>
+                                </Trigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+
                 </ListBox>
             </Grid>
         </Border>
