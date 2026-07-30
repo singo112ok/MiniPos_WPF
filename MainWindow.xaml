@@ -33,15 +33,50 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
+                <Grid.Resources>
+                    <Style x:Key="FilterButtonStyle" TargetType="RadioButton">
+                        <Setter Property="Margin" Value="0, 0, 10, 0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="RadioButton">
+                                    <Border x:Name="border" Background="#EDF2F7" CornerRadius="15" Padding="16,8" Cursor="Hand">
+                                        <TextBlock x:Name="txt" Text="{TemplateBinding Content}" FontWeight="Bold" Foreground="#4A5568"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="border" Property="Background" Value="#3182CE"/>
+                                            <Setter TargetName="txt" Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Grid.Resources>
+
                 <!-- 영역 타이틀 -->
                 <TextBlock Grid.Row="0" Text="📦 상품 선택 (클릭하여 주문)"
                            FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Foreground="#34495E"/>
-                <!-- 상품 목록을 출력하는 ListBox -->
-                <ListBox Grid.Row="1"
-                         ItemsSource="{Binding Products}"
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,15">
+                    <RadioButton Content="전체" Style="{StaticResource FilterButtonStyle}"
+                                 IsChecked="True"
+                                 Command="{Binding SetCategoryFilterCommand}" CommandParameter="All"/>
+                    <RadioButton Content="☕ Coffee" Style="{StaticResource FilterButtonStyle}" 
+                         Command="{Binding SetCategoryFilterCommand}" CommandParameter="Coffee"/>
+
+                    <RadioButton Content="🍰 Dessert" Style="{StaticResource FilterButtonStyle}" 
+                         Command="{Binding SetCategoryFilterCommand}" CommandParameter="Dessert"/>
+                </StackPanel>
+
+                    <!-- 상품 목록을 출력하는 ListBox -->
+                <ListBox Grid.Row="2"
+                         ItemsSource="{Binding ProductsView}"
                          SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                          HorizontalAlignment="Stretch"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -157,7 +192,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <Button
-                    Grid.Row="2"
+                    Grid.Row="3"
                     Content="상품 추가" 
                     Command="{Binding AddProductCommand}"
                     Padding="1,1" Background="#3182CE" Foreground="White" 

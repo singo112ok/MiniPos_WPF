@@ -8,6 +8,8 @@ using MiniPos.Views;
 using System.Collections.ObjectModel;
 using System.Net.Sockets;
 using System.Runtime.Serialization.DataContracts;
+using System.ComponentModel;
+using System.Windows.Data;
 
 
 namespace MiniPos.ViewModels
@@ -18,10 +20,15 @@ namespace MiniPos.ViewModels
 
 		public ObservableCollection<ApiPost> ApiPosts { get; } = new();
 
+		public ICollectionView ProductsView { get; }
+
 		private readonly TcpPosClient _tcpClient = new();
 		private readonly TcpPosServer _tcpServer = new();
 
 		private readonly SerialReceiptPrinter _printer = new();
+
+		[ObservableProperty]
+		private string _currentCategoryFileter = "All";
 
 		[ObservableProperty]
 		private bool _isApiLoading = false;
@@ -50,6 +57,11 @@ namespace MiniPos.ViewModels
 
 		public string ServerButtonText => IsServerRunning ? "🛑 가상 결제단말기 (서버) 정지" : "🟢 가상 결제단말기 (서버) 가동";
 
+		partial void OnCurrentCategoryFileterChanged(string value)
+		{
+			ProductsView.Refresh();
+		}
+
 		partial void OnSelectedProductChanged(Product? value)
 		{
 			if (value == null) return;
@@ -66,6 +78,27 @@ namespace MiniPos.ViewModels
 		public MainViewModel()
 		{
 			LoadInitialProducts();
+
+			ProductsView = CollectionViewSource.GetDefaultView(Products);
+			ProductsView.Filter = FilterProducts;
+		}
+
+		private bool FilterProducts(object obj)
+		{
+			if (obj is Product product)
+			{
+				if(CurrentCategoryFileter == "All")
+					return true;
+
+				return product.Category == CurrentCategoryFileter;
+			}
+			return false;
+		}
+
+		[RelayCommand]
+		private void SetCategoryFilter(string category)
+		{
+			CurrentCategoryFileter = category;
 		}
 
 		private void LoadInitialProducts()
