@@ -4,8 +4,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MiniPos.Models;
 using MiniPos.Services;
+using MiniPos.Views;
 using System.Collections.ObjectModel;
 using System.Net.Sockets;
+using System.Runtime.Serialization.DataContracts;
 
 
 namespace MiniPos.ViewModels
@@ -71,6 +73,40 @@ namespace MiniPos.ViewModels
 			Products.Add(new Product { Id = 1, Name = "아메리카노", Price = 4500, Category = "Coffee" });
 			Products.Add(new Product { Id = 2, Name = "카페라떼", Price = 5000, Category = "Coffee" });
 			Products.Add(new Product { Id = 3, Name = "치즈케이크", Price = 6500, Category = "Dessert" });
+		}
+
+		[RelayCommand]
+		private async Task AddProduct()
+		{
+			var addProductViewModel = new ProductAddViewModel();
+
+			var addProductWindow = new ProductAddWindow
+			{
+				DataContext = addProductViewModel,
+				Owner = Application.Current.MainWindow
+			};
+
+			if (addProductWindow.ShowDialog() == true)
+			{
+				if (string.IsNullOrWhiteSpace(addProductViewModel.InputName))
+				{
+					MessageBox.Show("상품명을 입력해주세요.", "경고", MessageBoxButton.OK, MessageBoxImage.Warning);
+					return;
+				}
+
+				int newId = Products.Count > 0 ? Products.Max(p => p.Id) + 1 : 1;
+
+				Products.Add(new Product
+				{
+					Id = newId,
+					Name = addProductViewModel.InputName,
+					Price = addProductViewModel.InputPrice,
+					Category = addProductViewModel.SelectedCategory
+				});
+
+				OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] 🆕 신규 상품 등록: {addProductViewModel.InputName}");
+
+			}
 		}
 
 		[RelayCommand]

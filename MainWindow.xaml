@@ -34,6 +34,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <!-- 영역 타이틀 -->
                 <TextBlock Grid.Row="0" Text="📦 상품 선택 (클릭하여 주문)"
@@ -65,7 +66,7 @@
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
-                        </Style>                        
+                        </Style>
                     </ListBox.ItemContainerStyle>
 
                     <!-- ★ 3. 데이터 템플릿 (개별 상품 카드 UI 정의) -->
@@ -86,9 +87,12 @@
 
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>  <!--카테고리-->
-                                        <RowDefinition Height="Auto"/>  <!--상품명-->
-                                        <RowDefinition Height="Auto"/>  <!--가격-->
+                                        <RowDefinition Height="Auto"/>
+                                        <!--카테고리-->
+                                        <RowDefinition Height="Auto"/>
+                                        <!--상품명-->
+                                        <RowDefinition Height="Auto"/>
+                                        <!--가격-->
                                     </Grid.RowDefinitions>
 
                                     <!-- ① 카테고리 뱃지 (좌측 상단) -->
@@ -104,7 +108,7 @@
                                            Text="{Binding Category}" 
                                            FontSize="11" 
                                            FontWeight="Bold" 
-                                           Foreground="#3182CE"/>   
+                                           Foreground="#3182CE"/>
                                     </Border>
 
                                     <!-- ② 상품명 바인딩 -->
@@ -151,8 +155,15 @@
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
-
                 </ListBox>
+                <Button
+                    Grid.Row="2"
+                    Content="상품 추가" 
+                    Command="{Binding AddProductCommand}"
+                    Padding="1,1" Background="#3182CE" Foreground="White" 
+                    FontWeight="Bold" BorderThickness="0" Cursor="Hand"
+                    HorizontalAlignment="Right"
+                />
             </Grid>
         </Border>
 
