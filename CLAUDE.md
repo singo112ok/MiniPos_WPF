@@ -33,7 +33,11 @@ DI 컨테이너나 ViewModelLocator가 없습니다. [MainWindow.xaml.cs](MainWi
 
 ### 상품 클릭 = 주문 추가
 
-`ListBox`의 `SelectedItem`이 `SelectedProduct`에 양방향 바인딩되어 있고, `partial void OnSelectedProductChanged`가 `AddOrder()`를 호출한 뒤 `SelectedProduct = null`로 되돌립니다. 선택 상태를 남기지 않으므로 같은 상품을 연속 클릭할 수 있습니다. 상품 카드에 별도 버튼/커맨드가 없는 이유입니다.
+상품 카드(`DataTemplate`) 전체를 `ControlTemplate`이 `ContentPresenter` 하나뿐인 투명 `Button`으로 감싸고, `AddOrderCommand`에 `CommandParameter="{Binding}"`으로 상품을 넘깁니다. `ListBox`의 선택 상태는 사용하지 않습니다(`SelectedItem` 바인딩 없음).
+
+이전에는 `SelectedItem` ↔ `SelectedProduct` 양방향 바인딩 후 `OnSelectedProductChanged`에서 `SelectedProduct = null`로 되돌리는 방식이었으나, 이 null 대입은 **바인딩의 소스 업데이트가 진행 중인 시점**에 발생해 WPF가 알림을 무시합니다. 결과적으로 `ListBox.SelectedItem`이 마지막 상품에 남아 같은 상품을 다시 클릭해도 `SelectionChanged`가 발생하지 않는 버그가 있었습니다. (구버전 코드는 `MainViewModel`에 주석으로 보존)
+
+`InputBindings`/`MouseBinding`을 쓰지 않은 이유: `InputBinding`은 `Freezable`이라 시각 트리에 없어 `RelativeSource AncestorType=ListBox`로 ViewModel 커맨드에 도달할 수 없습니다.
 
 ### 한 프로세스 안의 TCP 서버 + 클라이언트
 

@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.Windows;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MiniPos.Models;
@@ -16,6 +17,8 @@ namespace MiniPos.ViewModels
 {
 	public partial class MainViewModel : ObservableObject
 	{
+		public ObservableCollection<OrderItem> CartItems { get; } = new();
+
 		private readonly RestApiService _restService = new();
 
 		public ObservableCollection<ApiPost> ApiPosts { get; } = new();
@@ -42,8 +45,9 @@ namespace MiniPos.ViewModels
 		[ObservableProperty]
 		private decimal _totalAmount = 0;
 
-		[ObservableProperty]
-		private Product? _selectedProduct;
+		// test woo: 카드 클릭을 AddOrderCommand로 직접 처리하도록 변경 (ListBox 선택 상태 미사용)
+		//[ObservableProperty]
+		//private Product? _selectedProduct;
 
 		[ObservableProperty]
 		[NotifyPropertyChangedFor(nameof(SimulationButtonText))]
@@ -62,14 +66,15 @@ namespace MiniPos.ViewModels
 			ProductsView.Refresh();
 		}
 
-		partial void OnSelectedProductChanged(Product? value)
-		{
-			if (value == null) return;
-
-			AddOrder(value);
-
-			SelectedProduct = null;
-		}
+		// test woo: 선택 → 주문 추가 → null 되돌리기 방식은 ListBox에 null이 반영되지 않아 폐기
+		//partial void OnSelectedProductChanged(Product? value)
+		//{
+		//	if (value == null) return;
+		//
+		//	AddOrder(value);
+		//
+		//	SelectedProduct = null;
+		//}
 
 
 		public ObservableCollection<Product> Products { get; } = new();
@@ -109,6 +114,61 @@ namespace MiniPos.ViewModels
 		}
 
 		[RelayCommand]
+		private async Task EditProduct(Product productToEdit)
+		{
+			if (productToEdit == null) return;
+
+			var editViewModel = new ProductAddViewModel
+			{
+				InputName = productToEdit.Name,
+				InputPrice = productToEdit.Price,
+				SelectedCategory = productToEdit.Category
+			};
+
+			var addProductWindow = new ProductAddWindow
+			{
+				DataContext = editViewModel,
+				Owner = Application.Current.MainWindow
+			};
+
+			if(addProductWindow.ShowDialog() == true)
+			{
+				productToEdit.Name = editViewModel.InputName;
+				productToEdit.Price = editViewModel.InputPrice;
+				productToEdit.Category = editViewModel.SelectedCategory;
+
+				ProductsView.Refresh();
+
+				OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] ✏️ 상품 수정됨: {productToEdit.Name}");
+			}
+
+
+
+
+		}
+
+		[RelayCommand]
+		private async Task DelProduct(Product productToRemove)
+		{
+			if (productToRemove == null) return;
+
+			var result = System.Windows.MessageBox.Show(
+				$"'{productToRemove.Name}' 상품을 삭제하시겠습니까?",
+				"상품 삭제 확인",
+				System.Windows.MessageBoxButton.YesNo,
+				System.Windows.MessageBoxImage.Question);
+
+			if(result == System.Windows.MessageBoxResult.Yes)
+			{
+				Products.Remove(productToRemove);
+
+				ProductsView.Refresh();
+
+				OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] 🗑️ 상품 삭제됨: {productToRemove.Name}");
+			}
+		}
+
+		[RelayCommand]
 		private async Task AddProduct()
 		{
 			var addProductViewModel = new ProductAddViewModel();
@@ -138,7 +198,6 @@ namespace MiniPos.ViewModels
 				});
 
 				OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] 🆕 신규 상품 등록: {addProductViewModel.InputName}");
-
 			}
 		}
 
@@ -181,17 +240,30 @@ namespace MiniPos.ViewModels
 		{
 			if (selectedProduct == null) return;
 
-			TotalAmount += selectedProduct.Price;
-			OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {selectedProduct.Name} 주문 (+{selectedProduct.Price:N0}원)");
+			var existingItem = CartItems.FirstOrDefault(x=> x.ProductInfo.Id == selectedProduct.Id);
+			if (existingItem != null) 
+			{
+				existingItem.Quantity++;
+			}
+			else
+			{
+				CartItems.Add(new OrderItem {  ProductInfo =selectedProduct });
+			}
+
+			UpdateTotalAmount();
+			
+
+			//TotalAmount += selectedProduct.Price;
+			//OrderLogs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {selectedProduct.Name} 주문 (+{selectedProduct.Price:N0}원)");
 		}
 
-		[RelayCommand]
-		private void ClearOrder()
-		{
-			TotalAmount = 0;
-			OrderLogs.Clear();
-			OrderLogs.Add($"[{DateTime.Now:HH:mm:ss}] 주문 내역이 초기화되었습니다");
-		}
+		//[RelayCommand]
+		//private void ClearOrder()
+		//{
+		//	TotalAmount = 0;
+		//	OrderLogs.Clear();
+		//	OrderLogs.Add($"[{DateTime.Now:HH:mm:ss}] 주문 내역이 초기화되었습니다");
+		//}
 
 		[RelayCommand]
 		private async Task ToggleSimulationAsync()
@@ -342,6 +414,46 @@ namespace MiniPos.ViewModels
 			{
 				_printer.Close();
 			}
+		}
+
+		[RelayCommand]
+		private void IncreaseQuantity(OrderItem item)
+		{
+			if(item != null)
+			{
+				item.Quantity++;
+				UpdateTotalAmount();
+			}
+		}
+
+		[RelayCommand]
+		private void DecreaseQuantity(OrderItem item)
+		{
+			if (item != null)
+			{
+				if( item.Quantity > 1)
+				{
+					item.Quantity--;
+				}
+				else
+				{
+					CartItems.Remove(item);
+				}
+				UpdateTotalAmount();
+			}
+		}
+
+		[RelayCommand]
+		private void ClearOrder()
+		{
+			CartItems.Clear();
+			UpdateTotalAmount();
+		}
+
+
+		private void UpdateTotalAmount()
+		{
+			TotalAmount = CartItems.Sum(x => x.SubTotal);
 		}
 	}
 }

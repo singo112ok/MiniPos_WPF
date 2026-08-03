@@ -77,7 +77,6 @@
                     <!-- 상품 목록을 출력하는 ListBox -->
                 <ListBox Grid.Row="2"
                          ItemsSource="{Binding ProductsView}"
-                         SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                          HorizontalAlignment="Stretch"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          BorderThickness="0" Background="Transparent" Padding="5">
@@ -107,6 +106,15 @@
                     <!-- ★ 3. 데이터 템플릿 (개별 상품 카드 UI 정의) -->
                     <ListBox.ItemTemplate>
                         <DataTemplate>
+                            <!-- test woo: 카드 클릭 = 주문 추가. ListBox 선택 상태에 의존하지 않음 -->
+                            <Button Command="{Binding DataContext.AddOrderCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}"
+                                    Focusable="False" HorizontalContentAlignment="Stretch">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Button.Template>
                             <!-- 상품 카드 외벽 (Border) -->
                             <Border x:Name="CardBorder"
                                     Background="White"
@@ -130,21 +138,43 @@
                                         <!--가격-->
                                     </Grid.RowDefinitions>
 
-                                    <!-- ① 카테고리 뱃지 (좌측 상단) -->
-                                    <!-- 카테고리에 따라 색상이 변하는 트리거는 아래 DataTemplate.Triggers에서 구현 -->
-                                    <Border x:Name="BadgeBorder"
-                                        Grid.Row="0" 
-                                        Background="#EBF4FF" 
-                                        CornerRadius="6" 
-                                        Padding="8,3" 
-                                        HorizontalAlignment="Left" 
-                                        Margin="0,0,0,10">
-                                        <TextBlock x:Name="BadgeText"
-                                           Text="{Binding Category}" 
-                                           FontSize="11" 
-                                           FontWeight="Bold" 
-                                           Foreground="#3182CE"/>
-                                    </Border>
+                                    <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                                        <!-- ① 카테고리 뱃지 (좌측 상단) -->
+                                        <!-- 카테고리에 따라 색상이 변하는 트리거는 아래 DataTemplate.Triggers에서 구현 -->
+                                        <Border x:Name="BadgeBorder"
+                                            Grid.Row="0" 
+                                            Background="#EBF4FF" 
+                                            CornerRadius="6" 
+                                            Padding="8,3" 
+                                            HorizontalAlignment="Left" 
+                                            Margin="0,0,0,10">
+                                            <TextBlock x:Name="BadgeText"
+                                               Text="{Binding Category}" 
+                                               FontSize="11" 
+                                               FontWeight="Bold" 
+                                               Foreground="#3182CE"/>
+                                        </Border>
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Right">
+                                            <Button Content="수정"
+                                                    Command="{Binding DataContext.EditProductCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent" Foreground="#E53E3E" BorderThickness="0" 
+                                                    FontSize="12" FontWeight="Bold" Cursor="Hand" 
+                                                    HorizontalAlignment="Right" VerticalAlignment="Top" Padding="5,0"
+                                             />
+
+                                            <Button Content="X"
+                                                    Command="{Binding DataContext.DelProductCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent" Foreground="#E53E3E" BorderThickness="0" 
+                                                    FontSize="12" FontWeight="Bold" Cursor="Hand" 
+                                                    HorizontalAlignment="Right" VerticalAlignment="Top" Padding="5,0"
+                                            />
+                                        </StackPanel>
+
+                                    </DockPanel>
 
                                     <!-- ② 상품명 바인딩 -->
                                     <TextBlock Grid.Row="1" 
@@ -170,6 +200,7 @@
                                                HorizontalAlignment="Right"/>
                                 </Grid>
                             </Border>
+                            </Button>
                             <!-- ★ 4. 데이터 및 마우스 상태에 따른 동적 속성 변경 (Triggers) -->
                             <DataTemplate.Triggers>
                                 <DataTrigger Binding="{Binding Category}" Value="Dessert">
@@ -289,101 +320,157 @@
         </Border>
 
 
-        <!-- [Row 2, Col 1] 우측 하단: 총 결제 금액 및 버튼 제어 패널 -->
+        <!-- [Row 2, Col 1] 우측 하단: 장바구니 및 총 결제 금액 및 버튼 제어 패널 -->
         <Border Grid.Row="2" Grid.Column="1"
                 Margin="0, 7.5, 15, 15" Background="White" CornerRadius="8"
                 Padding="15">
-            <StackPanel>
-                <!-- 총 결제 금액 표시 영역 -->
-                <DockPanel Margin="0,0,0,15">
-                    <TextBlock Text="총 결제 금액:" FontSize="18" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C0}원}" 
-                               FontSize="26" FontWeight="Heavy" Foreground="#E74C3C" 
-                               HorizontalAlignment="Right" TextAlignment="Right"/>
-                </DockPanel>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- 제어 버튼 2개 배치 -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
+                <ListBox Grid.Row="0" ItemsSource="{Binding CartItems}"
+                         BorderThickness="0" Background="Transparent"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,0,0,10">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Margin" Value="0,0,0,5"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#F7FAFC" CornerRadius="6" Padding="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0"
-                            Content="{Binding SimulationButtonText}"
-                            Command="{Binding ToggleSimulationCommand}"
-                            Height="45"
-                            Background="#2980B9"
-                            Foreground="White"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            BorderThickness="0"
-                            Cursor="Hand"/>
+                                    <!-- 상품명 -->
+                                    <TextBlock Grid.Column="0" Text="{Binding ProductInfo.Name}"
+                                               FontWeight="Bold" Foreground="#2D3748" VerticalAlignment="Center"/>
 
-                    <!-- 임시 테스트: 첫 번째 상품(아메리카노)을 주문에 추가하는 버튼 -->
-                    <!--<Button Grid.Column="0" Content="☕ 1번 상품 주문 테스트" 
-                            Command="{Binding AddOrderCommand}"
-                            CommandParameter="{Binding Products[0]}"
-                            Height="45" Background="#27AE60" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0"/>-->
+                                    <!-- 수량 증감 조절 -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0">
+                                        <Button Content="-" Width="28" Height="28"
+                                                Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                Background="#E2E8F0" BorderThickness="0" Cursor="Hand" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Quantity}" Width="35" TextAlignment="Center"
+                                                   VerticalAlignment="Center" FontWeight="Bold" FontSize="14"/>
+                                        <Button Content="+" Width="28" Height="28"
+                                                Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                Background="#E2E8F0" BorderThickness="0" Cursor="Hand" FontWeight="Bold"/>
+                                    </StackPanel>
 
-                    <!-- 주문 초기화 버튼 -->
-                    <Button Grid.Column="2" Content="🗑️ 주문 내역 초기화" 
-                            Command="{Binding ClearOrderCommand}"
-                            Height="45" Background="#E74C3C" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0"/>
+                                    <!-- 단일 항목 소계 (단가 * 수량) -->
+                                    <TextBlock Grid.Column="2" Text="{Binding SubTotal, StringFormat={}{0:N0}원}" 
+                                       FontWeight="Bold" Foreground="#E53E3E" TextAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
 
-                </Grid>
-                <Border Margin="0,15,0,0" Padding="12" Background="#EDF2F7" CornerRadius="6">
-                    <StackPanel>
-                        <TextBlock Text="⚡ 실시간 TCP 소켓 결제 통신 테스트" FontSize="13" FontWeight="Bold" Foreground="#4A5568" Margin="0,0,0,8"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="1*"/>
-                            </Grid.ColumnDefinitions>
+                <!-- 회색 분리선 -->
+                <Rectangle Grid.Row="1" Height="1" Fill="#E2E8F0" Margin="0,5,0,15"/>
 
-                            <!-- 1. 내장 TCP 서버 켜기/끄기 버튼 -->
-                            <Button Grid.Column="0" 
-                            Content="{Binding ServerButtonText}" 
-                            Command="{Binding ToggleTcpServerCommand}"
-                            Height="40" Background="#4A5568" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+                <StackPanel Grid.Row="2">
+                    <!-- 총 결제 금액 표시 영역 -->
+                    <DockPanel Margin="0,0,0,15">
+                        <TextBlock Text="총 결제 금액:" FontSize="18" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:C0}원}" 
+                                   FontSize="26" FontWeight="Heavy" Foreground="#E74C3C" 
+                                   HorizontalAlignment="Right" TextAlignment="Right"/>
+                    </DockPanel>
 
-                            <!-- 2. TCP 결제 승인 요청 (소켓 통신 발송) 버튼 -->
-                            <Button Grid.Column="2" 
-                            Content="💳 TCP 결제 승인 요청 (Send)" 
-                            Command="{Binding RequestTcpPaymentCommand}"
-                            Height="40" Background="#805AD5" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <Border Margin="0,10,0,0" Padding="12" Background="#FEFCBF" CornerRadius="6">
+                    <!-- 제어 버튼 2개 배치 -->
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="1*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0" Text="🖨️ 포트번호:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,8,0" Foreground="#744210"/>
+                        <Button Grid.Column="0"
+                                Content="{Binding SimulationButtonText}"
+                                Command="{Binding ToggleSimulationCommand}"
+                                Height="45"
+                                Background="#2980B9"
+                                Foreground="White"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
 
-                        <!-- COM 포트 입력 텍스트박스 (예: COM1, COM3, COM10) -->
-                        <TextBox Grid.Column="1" Text="{Binding ComPortName, Mode=TwoWay}" 
-                         VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
-                         FontWeight="Bold" FontSize="13" Padding="4"/>
+                        <!-- 임시 테스트: 첫 번째 상품(아메리카노)을 주문에 추가하는 버튼 -->
+                        <!--<Button Grid.Column="0" Content="☕ 1번 상품 주문 테스트" 
+                                Command="{Binding AddOrderCommand}"
+                                CommandParameter="{Binding Products[0]}"
+                                Height="45" Background="#27AE60" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0"/>-->
 
-                        <!-- 영수증 출력 실행 버튼 -->
-                        <Button Grid.Column="3" 
-                        Content="📄 실물 영수증 인쇄 (Serial)" 
-                        Command="{Binding PrintReceiptCommand}"
-                        Height="40" Background="#D69E2E" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+                        <!-- 주문 초기화 버튼 -->
+                        <Button Grid.Column="2" Content="🗑️ 주문 내역 초기화" 
+                                Command="{Binding ClearOrderCommand}"
+                                Height="45" Background="#E74C3C" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0"/>
+
                     </Grid>
-                </Border>
+                    <Border Margin="0,15,0,0" Padding="12" Background="#EDF2F7" CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock Text="⚡ 실시간 TCP 소켓 결제 통신 테스트" FontSize="13" FontWeight="Bold" Foreground="#4A5568" Margin="0,0,0,8"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
 
-            </StackPanel>
-            
+                                <!-- 1. 내장 TCP 서버 켜기/끄기 버튼 -->
+                                <Button Grid.Column="0" 
+                                Content="{Binding ServerButtonText}" 
+                                Command="{Binding ToggleTcpServerCommand}"
+                                Height="40" Background="#4A5568" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+
+                                <!-- 2. TCP 결제 승인 요청 (소켓 통신 발송) 버튼 -->
+                                <Button Grid.Column="2" 
+                                Content="💳 TCP 결제 승인 요청 (Send)" 
+                                Command="{Binding RequestTcpPaymentCommand}"
+                                Height="40" Background="#805AD5" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,10,0,0" Padding="12" Background="#FEFCBF" CornerRadius="6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="🖨️ 포트번호:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,8,0" Foreground="#744210"/>
+
+                            <!-- COM 포트 입력 텍스트박스 (예: COM1, COM3, COM10) -->
+                            <TextBox Grid.Column="1" Text="{Binding ComPortName, Mode=TwoWay}" 
+                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                             FontWeight="Bold" FontSize="13" Padding="4"/>
+
+                            <!-- 영수증 출력 실행 버튼 -->
+                            <Button Grid.Column="3" 
+                            Content="📄 실물 영수증 인쇄 (Serial)" 
+                            Command="{Binding PrintReceiptCommand}"
+                            Height="40" Background="#D69E2E" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+                        </Grid>
+                    </Border>
+
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
