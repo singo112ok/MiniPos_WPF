@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MiniPos.Services
 {
-	public class RestApiService
+	public class RestApiService : IRestApiService
 	{
 		private static readonly HttpClient _httpClient = new()
 		{
